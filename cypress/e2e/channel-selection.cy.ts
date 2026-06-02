@@ -22,21 +22,16 @@ describe('Channel Selection', () => {
 
   it('loads video player when a channel is clicked', () => {
     cy.selectChannel('rai-1')
-    cy.get('[data-testid="video-iframe"]').should('exist')
-    cy.get('[data-testid="video-iframe"]').should('have.attr', 'src')
+    cy.get('[data-testid="video-hls"]').should('exist')
     cy.get('[data-testid="channel-name"]').should('contain', 'Rai 1')
   })
 
   it('switches video when a different channel is selected', () => {
     cy.selectChannel('rai-1')
-    cy.get('[data-testid="video-iframe"]')
-      .should('have.attr', 'src')
-      .and('contain', 'iframe/dirette/rai1')
+    cy.get('[data-testid="video-hls"]').should('exist')
 
     cy.selectChannel('rai-2')
-    cy.get('[data-testid="video-iframe"]')
-      .should('have.attr', 'src')
-      .and('contain', 'iframe/dirette/rai2')
+    cy.get('[data-testid="video-hls"]').should('exist')
     cy.get('[data-testid="channel-name"]').should('contain', 'Rai 2')
   })
 

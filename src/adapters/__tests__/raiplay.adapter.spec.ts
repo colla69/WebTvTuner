@@ -8,32 +8,47 @@ describe('raiplayAdapter', () => {
     expect(raiplayAdapter.domain).toBe('raiplay.it')
   })
 
-  it('generates iframe config using dedicated embed URL', () => {
+  it('generates HLS config with proxied relinker URL', () => {
     const config = raiplayAdapter.getEmbedConfig('https://www.raiplay.it/dirette/rai1')
-    expect(config.type).toBe('iframe')
-    if (config.type === 'iframe') {
-      expect(config.src).toBe('https://www.raiplay.it/iframe/dirette/rai1')
-      expect(config.allow).toContain('autoplay')
+    expect(config.type).toBe('hls')
+    if (config.type === 'hls') {
+      expect(config.streamUrl).toBe('/api/rai-relinker/relinkerServlet.htm?cont=2606803&output=20')
     }
   })
 
-  it('handles all RAI channel URLs', () => {
-    const channels = ['rai1', 'rai2', 'rai3', 'rai4', 'rai5', 'raimovie', 'raipremium', 'raigulp', 'raiyoyo']
-    for (const slug of channels) {
+  it('handles all RAI channel URLs with correct content IDs', () => {
+    const expected: Record<string, string> = {
+      rai1: '2606803',
+      rai2: '308718',
+      rai3: '308709',
+      rai4: '746966',
+      rai5: '395276',
+      raimovie: '747002',
+      raipremium: '746992',
+      raigulp: '746953',
+      raiyoyo: '746899',
+    }
+    for (const [slug, contId] of Object.entries(expected)) {
       const config = raiplayAdapter.getEmbedConfig(`https://www.raiplay.it/dirette/${slug}`)
-      expect(config.type).toBe('iframe')
-      if (config.type === 'iframe') {
-        expect(config.src).toBe(`https://www.raiplay.it/iframe/dirette/${slug}`)
+      expect(config.type).toBe('hls')
+      if (config.type === 'hls') {
+        expect(config.streamUrl).toContain(`cont=${contId}`)
+        expect(config.streamUrl).toContain('output=20')
       }
     }
   })
 
   it('handles URL with trailing slash', () => {
     const config = raiplayAdapter.getEmbedConfig('https://www.raiplay.it/dirette/rai1/')
-    expect(config.type).toBe('iframe')
-    if (config.type === 'iframe') {
-      expect(config.src).toBe('https://www.raiplay.it/iframe/dirette/rai1')
+    expect(config.type).toBe('hls')
+    if (config.type === 'hls') {
+      expect(config.streamUrl).toContain('cont=2606803')
     }
+  })
+
+  it('returns error for unknown channel slug', () => {
+    const config = raiplayAdapter.getEmbedConfig('https://www.raiplay.it/dirette/unknownchannel')
+    expect(config.type).toBe('error')
   })
 
   it('returns error for invalid URL', () => {

@@ -1,11 +1,70 @@
 <script setup lang="ts">
+import { ref, watch, onBeforeUnmount } from 'vue'
+import Hls from 'hls.js'
 import type { EmbedConfig } from '../adapters/adapter.types'
 
-defineProps<{
+const props = defineProps<{
   config: EmbedConfig | null
   channelName?: string
   channelGroup?: string
 }>()
+
+const videoRef = ref<HTMLVideoElement | null>(null)
+let hls: Hls | null = null
+
+function destroyHls() {
+  if (hls) {
+    hls.destroy()
+    hls = null
+  }
+}
+
+function initHls(streamUrl: string) {
+  destroyHls()
+  const video = videoRef.value
+  if (!video) return
+
+  if (Hls.isSupported()) {
+    hls = new Hls({ enableWorker: true, lowLatencyMode: true })
+    hls.loadSource(streamUrl)
+    hls.attachMedia(video)
+    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      video.play().catch(() => {})
+    })
+    hls.on(Hls.Events.ERROR, (_event, data) => {
+      if (data.fatal) {
+        if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+          hls?.startLoad()
+        } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          hls?.recoverMediaError()
+        }
+      }
+    })
+  } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+    // Safari native HLS support
+    video.src = streamUrl
+    video.addEventListener('loadedmetadata', () => {
+      video.play().catch(() => {})
+    })
+  }
+}
+
+watch(
+  () => props.config,
+  (newConfig) => {
+    if (newConfig?.type === 'hls') {
+      // Wait for next tick so videoRef is rendered
+      setTimeout(() => initHls(newConfig.streamUrl), 0)
+    } else {
+      destroyHls()
+    }
+  },
+  { immediate: true }
+)
+
+onBeforeUnmount(() => {
+  destroyHls()
+})
 </script>
 
 <template>
@@ -43,13 +102,15 @@ defineProps<{
       />
 
       <!-- HLS stream -->
-      <div
+      <video
         v-else-if="config.type === 'hls'"
+        ref="videoRef"
         data-testid="video-hls"
-        class="absolute inset-0 flex items-center justify-center text-gray-400"
-      >
-        HLS stream: {{ config.streamUrl }}
-      </div>
+        class="w-full h-full bg-black"
+        controls
+        autoplay
+        playsinline
+      />
 
       <!-- External link (cannot be embedded) -->
       <div
