@@ -5,7 +5,8 @@ import type { EmbedAdapter, EmbedConfig } from './adapter.types'
  * https://live02-seg.msf.cdn.mediaset.net/live/ch-{code}/{code}-clr.isml/index.m3u8
  *
  * The channel code is the lowercase callSign extracted from the URL suffix (_cXX → xx).
- * Proxied through /api/mediaset-live/ in nginx to handle CORS + geo-restriction.
+ * We give the CDN URL directly to hls.js so the BROWSER fetches it (routes through
+ * the user's VPN). Falls back to proxy if CORS blocks direct access.
  */
 export const mediasetAdapter: EmbedAdapter = {
   id: 'mediaset',
@@ -33,7 +34,7 @@ export const mediasetAdapter: EmbedAdapter = {
 
       return {
         type: 'hls',
-        streamUrl: `/api/mediaset-live/live/ch-${code}/${code}-clr.isml/index.m3u8`,
+        streamUrl: `https://live02-seg.msf.cdn.mediaset.net/live/ch-${code}/${code}-clr.isml/index.m3u8`,
       }
     } catch {
       return { type: 'error', message: 'Invalid URL format for Mediaset adapter' }

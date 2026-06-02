@@ -8,11 +8,11 @@ describe('mediasetAdapter', () => {
     expect(mediasetAdapter.domain).toBe('mediasetinfinity.mediaset.it')
   })
 
-  it('generates HLS config with proxied CDN URL', () => {
+  it('generates HLS config with direct CDN URL', () => {
     const config = mediasetAdapter.getEmbedConfig('https://mediasetinfinity.mediaset.it/diretta/canale5_cC5')
     expect(config.type).toBe('hls')
     if (config.type === 'hls') {
-      expect(config.streamUrl).toBe('/api/mediaset-live/live/ch-c5/c5-clr.isml/index.m3u8')
+      expect(config.streamUrl).toBe('https://live02-seg.msf.cdn.mediaset.net/live/ch-c5/c5-clr.isml/index.m3u8')
     }
   })
 
@@ -29,7 +29,7 @@ describe('mediasetAdapter', () => {
       const config = mediasetAdapter.getEmbedConfig(`https://mediasetinfinity.mediaset.it/diretta/${part}`)
       expect(config.type).toBe('hls')
       if (config.type === 'hls') {
-        expect(config.streamUrl).toBe(`/api/mediaset-live/live/ch-${code}/${code}-clr.isml/index.m3u8`)
+        expect(config.streamUrl).toBe(`https://live02-seg.msf.cdn.mediaset.net/live/ch-${code}/${code}-clr.isml/index.m3u8`)
       }
     }
   })
