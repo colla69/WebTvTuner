@@ -11,6 +11,7 @@ const props = defineProps<{
 
 const videoRef = ref<HTMLVideoElement | null>(null)
 const hlsError = ref<string | null>(null)
+const loading = ref(false)
 let hls: Hls | null = null
 let retryCount = 0
 const MAX_RETRIES = 3
@@ -21,6 +22,26 @@ function destroyHls() {
     hls = null
   }
   retryCount = 0
+}
+
+/**
+ * Resolves the actual stream URL. For RAI, the proxy returns a plain-text
+ * CDN URL that we then pass to hls.js. For Mediaset, the URL is direct.
+ */
+async function resolveStreamUrl(url: string): Promise<string> {
+  if (url.includes('/api/rai-relinker/')) {
+    const resp = await fetch(url)
+    if (!resp.ok) {
+      throw new Error(`Relinker error: HTTP ${resp.status}`)
+    }
+    const text = (await resp.text()).trim()
+    if (!text.startsWith('http')) {
+      throw new Error('Relinker returned invalid URL')
+    }
+    return text
+  }
+  // Mediaset: direct proxy URL
+  return url
 }
 
 function initHls(streamUrl: string) {
@@ -34,6 +55,7 @@ function initHls(streamUrl: string) {
     hls.loadSource(streamUrl)
     hls.attachMedia(video)
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      loading.value = false
       hlsError.value = null
       video.play().catch(() => {})
     })
@@ -44,11 +66,13 @@ function initHls(streamUrl: string) {
           if (retryCount <= MAX_RETRIES) {
             setTimeout(() => hls?.startLoad(), 2000)
           } else {
+            loading.value = false
             hlsError.value = 'Stream unavailable. Make sure you are connected to an Italian VPN — these streams are geo-restricted to Italy.'
           }
         } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
           hls?.recoverMediaError()
         } else {
+          loading.value = false
           hlsError.value = 'Failed to load stream. The channel may be temporarily unavailable.'
         }
       }
@@ -56,11 +80,26 @@ function initHls(streamUrl: string) {
   } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
     video.src = streamUrl
     video.addEventListener('loadedmetadata', () => {
+      loading.value = false
       video.play().catch(() => {})
     })
     video.addEventListener('error', () => {
+      loading.value = false
       hlsError.value = 'Stream unavailable. Make sure you are connected to an Italian VPN.'
     })
+  }
+}
+
+async function loadStream(config: EmbedConfig) {
+  if (config.type !== 'hls') return
+  loading.value = true
+  hlsError.value = null
+  try {
+    const actualUrl = await resolveStreamUrl(config.streamUrl)
+    initHls(actualUrl)
+  } catch (err: unknown) {
+    loading.value = false
+    hlsError.value = err instanceof Error ? err.message : 'Failed to resolve stream URL'
   }
 }
 
@@ -69,10 +108,11 @@ watch(
   (newConfig) => {
     if (newConfig?.type === 'hls') {
       hlsError.value = null
-      setTimeout(() => initHls(newConfig.streamUrl), 0)
+      setTimeout(() => loadStream(newConfig), 0)
     } else {
       destroyHls()
       hlsError.value = null
+      loading.value = false
     }
   },
   { immediate: true }
@@ -130,6 +170,14 @@ onBeforeUnmount(() => {
           autoplay
           playsinline
         />
+        <!-- Loading overlay -->
+        <div
+          v-if="loading && !hlsError"
+          class="absolute inset-0 flex flex-col items-center justify-center bg-black/80 gap-3"
+        >
+          <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <p class="text-gray-400 text-sm">Connecting to stream...</p>
+        </div>
         <!-- HLS error overlay -->
         <div
           v-if="hlsError"
@@ -140,7 +188,7 @@ onBeforeUnmount(() => {
           <p class="text-red-400 text-lg font-medium">{{ hlsError }}</p>
           <button
             class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors"
-            @click="config.type === 'hls' && initHls(config.streamUrl)"
+            @click="config.type === 'hls' && loadStream(config)"
           >
             Retry
           </button>
