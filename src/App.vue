@@ -10,21 +10,13 @@ const { embedConfig } = useAdapter()
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-900 text-white flex flex-col">
-    <!-- Header -->
-    <header data-testid="app-header" class="bg-gray-800 border-b border-gray-700 px-4 py-3">
-      <h1 class="text-xl font-bold text-blue-400">📺 WebTvTuner</h1>
-    </header>
-
-    <!-- Main content -->
-    <main class="flex-1 flex flex-col max-w-7xl mx-auto w-full">
-      <!-- Video Player -->
-      <section class="p-4">
-        <VideoPlayer
-          :config="embedConfig"
-          :channel-name="store.selectedChannel?.name"
-        />
-      </section>
+  <div class="min-h-screen bg-gray-900 text-white flex">
+    <!-- Sidebar -->
+    <aside data-testid="sidebar" class="w-64 min-w-64 h-screen flex flex-col bg-gray-800 border-r border-gray-700 overflow-y-auto sticky top-0">
+      <div class="p-4 border-b border-gray-700">
+        <p class="text-xs font-bold tracking-widest uppercase text-blue-400">WebTvTuner</p>
+        <h1 class="text-xl font-bold text-white mt-1">Channels</h1>
+      </div>
 
       <!-- Group Filter -->
       <GroupFilter
@@ -33,11 +25,20 @@ const { embedConfig } = useAdapter()
         @filter="store.setActiveGroup"
       />
 
-      <!-- Channel Grid -->
+      <!-- Channel List -->
       <ChannelGrid
         :channels="store.filteredChannels"
         :selected-channel-id="store.selectedChannel?.id"
         @select="store.selectChannel"
+      />
+    </aside>
+
+    <!-- Main Player Area -->
+    <main class="flex-1 min-h-screen flex flex-col p-6">
+      <VideoPlayer
+        :config="embedConfig"
+        :channel-name="store.selectedChannel?.name"
+        :channel-group="store.selectedChannel?.group"
       />
     </main>
   </div>

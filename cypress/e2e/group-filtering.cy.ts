@@ -13,8 +13,8 @@ describe('Group Filtering', () => {
 
   it('shows all channels by default', () => {
     cy.get('[data-testid="channel-rai-1"]').should('be.visible')
-    cy.get('[data-testid="channel-canale-5"]').should('be.visible')
-    cy.get('[data-testid="channel-rai-gulp"]').should('be.visible')
+    cy.get('[data-testid="channel-canale-5"]').scrollIntoView().should('be.visible')
+    cy.get('[data-testid="channel-rai-gulp"]').scrollIntoView().should('be.visible')
   })
 
   it('filters to RAI channels only', () => {

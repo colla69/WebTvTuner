@@ -12,16 +12,19 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div data-testid="channel-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 p-4">
+  <div data-testid="channel-grid" class="flex flex-col gap-1 p-3 flex-1 overflow-y-auto">
     <button
       v-for="channel in channels"
       :key="channel.id"
       :data-testid="`channel-${channel.id}`"
-      class="flex items-center justify-center p-4 rounded-lg border border-gray-700 bg-gray-800 hover:bg-gray-700 hover:border-blue-500 transition-all duration-200 text-sm font-medium text-gray-200 cursor-pointer"
-      :class="{ 'ring-2 ring-blue-500 bg-gray-700': selectedChannelId === channel.id }"
+      class="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-gray-700 transition-colors cursor-pointer text-left"
+      :class="selectedChannelId === channel.id
+        ? 'bg-blue-500/15 border border-blue-500/50 text-white'
+        : 'border border-transparent'"
       @click="emit('select', channel)"
     >
-      {{ channel.name }}
+      <span class="font-medium">{{ channel.name }}</span>
+      <span class="text-xs px-2 py-0.5 rounded-full bg-white/5 text-gray-500">{{ channel.group }}</span>
     </button>
   </div>
 </template>
