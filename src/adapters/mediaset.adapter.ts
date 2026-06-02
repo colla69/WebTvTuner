@@ -2,9 +2,11 @@ import type { EmbedAdapter, EmbedConfig } from './adapter.types'
 
 /**
  * Adapter for mediasetinfinity.mediaset.it live streams.
- * Mediaset blocks iframe embedding via CSP: frame-ancestors 'self' *.mediaset.it *.mediaset.net
- * Falls back to opening the stream in a new tab.
- * Last verified: 2026-06-02
+ * Uses Mediaset's own embeddable player (static3.mediasetplay.mediaset.it/player/)
+ * which serves with Access-Control-Allow-Origin: * and no frame-blocking headers.
+ *
+ * The callSign is extracted from the channel URL suffix pattern: `_cXX` → callSign `XX`
+ * e.g. canale5_cC5 → C5, rete4_cR4 → R4, italia1_cI1 → I1
  */
 export const mediasetAdapter: EmbedAdapter = {
   id: 'mediaset',
@@ -22,11 +24,20 @@ export const mediasetAdapter: EmbedAdapter = {
         return { type: 'error', message: 'Invalid Mediaset channel URL: missing channel identifier' }
       }
 
-      // Mediaset blocks iframe embedding (CSP frame-ancestors restriction)
+      // Extract callSign from the `_cXX` suffix (e.g. "canale5_cC5" → "C5")
+      const callSignMatch = channelPart.match(/_c([A-Za-z0-9]+)$/)
+      if (!callSignMatch) {
+        return { type: 'error', message: `Cannot extract callSign from channel: ${channelPart}` }
+      }
+
+      const callSign = callSignMatch[1]
+      const embedUrl = `https://static3.mediasetplay.mediaset.it/player/index.html?autoplay=true&callSign=${callSign}`
+
       return {
-        type: 'external',
-        url: `https://mediasetinfinity.mediaset.it/diretta/${channelPart}`,
-        message: 'Mediaset does not allow embedding. Click below to open in a new tab.',
+        type: 'iframe',
+        src: embedUrl,
+        allow: 'autoplay; encrypted-media; fullscreen',
+        referrerPolicy: 'no-referrer',
       }
     } catch {
       return { type: 'error', message: 'Invalid URL format for Mediaset adapter' }

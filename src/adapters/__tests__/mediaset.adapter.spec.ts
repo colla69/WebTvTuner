@@ -8,32 +8,44 @@ describe('mediasetAdapter', () => {
     expect(mediasetAdapter.domain).toBe('mediasetinfinity.mediaset.it')
   })
 
-  it('generates external config (cannot iframe due to CSP)', () => {
+  it('generates iframe config using Mediaset embedded player', () => {
     const config = mediasetAdapter.getEmbedConfig('https://mediasetinfinity.mediaset.it/diretta/rete4_cR4')
-    expect(config.type).toBe('external')
-    if (config.type === 'external') {
-      expect(config.url).toBe('https://mediasetinfinity.mediaset.it/diretta/rete4_cR4')
-      expect(config.message).toContain('Mediaset')
+    expect(config.type).toBe('iframe')
+    if (config.type === 'iframe') {
+      expect(config.src).toBe('https://static3.mediasetplay.mediaset.it/player/index.html?autoplay=true&callSign=R4')
+      expect(config.allow).toContain('autoplay')
     }
   })
 
-  it('handles all Mediaset channel URLs', () => {
-    const channelParts = ['rete4_cR4', 'canale5_cC5', 'italia1_cI1', 'iris_cKI', '_cTS', 'la5_cKA']
-    for (const part of channelParts) {
+  it('extracts correct callSign for all Mediaset channels', () => {
+    const expected: Record<string, string> = {
+      'rete4_cR4': 'R4',
+      'canale5_cC5': 'C5',
+      'italia1_cI1': 'I1',
+      'iris_cKI': 'KI',
+      '_cTS': 'TS',
+      'la5_cKA': 'KA',
+    }
+    for (const [part, callSign] of Object.entries(expected)) {
       const config = mediasetAdapter.getEmbedConfig(`https://mediasetinfinity.mediaset.it/diretta/${part}`)
-      expect(config.type).toBe('external')
-      if (config.type === 'external') {
-        expect(config.url).toBe(`https://mediasetinfinity.mediaset.it/diretta/${part}`)
+      expect(config.type).toBe('iframe')
+      if (config.type === 'iframe') {
+        expect(config.src).toBe(`https://static3.mediasetplay.mediaset.it/player/index.html?autoplay=true&callSign=${callSign}`)
       }
     }
   })
 
   it('handles URL with trailing slash', () => {
     const config = mediasetAdapter.getEmbedConfig('https://mediasetinfinity.mediaset.it/diretta/canale5_cC5/')
-    expect(config.type).toBe('external')
-    if (config.type === 'external') {
-      expect(config.url).toBe('https://mediasetinfinity.mediaset.it/diretta/canale5_cC5')
+    expect(config.type).toBe('iframe')
+    if (config.type === 'iframe') {
+      expect(config.src).toContain('callSign=C5')
     }
+  })
+
+  it('returns error for URL without callSign pattern', () => {
+    const config = mediasetAdapter.getEmbedConfig('https://mediasetinfinity.mediaset.it/diretta/nocallsign')
+    expect(config.type).toBe('error')
   })
 
   it('returns error for invalid URL', () => {

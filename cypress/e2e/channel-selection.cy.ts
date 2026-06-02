@@ -40,13 +40,14 @@ describe('Channel Selection', () => {
     cy.get('[data-testid="channel-name"]').should('contain', 'Rai 2')
   })
 
-  it('shows external link for Mediaset channels (cannot embed)', () => {
+  it('loads embedded player for Mediaset channels', () => {
     cy.get('[data-testid="channel-canale-5"]').scrollIntoView()
     cy.selectChannel('canale-5')
-    cy.get('[data-testid="player-external"]').should('be.visible')
-    cy.get('[data-testid="external-link"]')
-      .should('have.attr', 'href')
-      .and('contain', 'mediasetinfinity')
+    cy.get('[data-testid="video-iframe"]').should('exist')
+    cy.get('[data-testid="video-iframe"]')
+      .should('have.attr', 'src')
+      .and('contain', 'static3.mediasetplay.mediaset.it/player')
+      .and('contain', 'callSign=C5')
     cy.get('[data-testid="channel-name"]').should('contain', 'Canale 5')
   })
 
