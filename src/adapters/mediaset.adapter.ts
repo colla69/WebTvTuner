@@ -1,12 +1,11 @@
 import type { EmbedAdapter, EmbedConfig } from './adapter.types'
 
 /**
- * Adapter for mediasetinfinity.mediaset.it live streams.
- * Uses Mediaset's own embeddable player (static3.mediasetplay.mediaset.it/player/)
- * which serves with Access-Control-Allow-Origin: * and no frame-blocking headers.
+ * Mediaset live HLS stream URL pattern:
+ * https://live02-seg.msf.cdn.mediaset.net/live/ch-{code}/{code}-clr.isml/index.m3u8
  *
- * The callSign is extracted from the channel URL suffix pattern: `_cXX` → callSign `XX`
- * e.g. canale5_cC5 → C5, rete4_cR4 → R4, italia1_cI1 → I1
+ * The channel code is the lowercase callSign extracted from the URL suffix (_cXX → xx).
+ * Proxied through /api/mediaset-live/ in nginx to handle CORS + geo-restriction.
  */
 export const mediasetAdapter: EmbedAdapter = {
   id: 'mediaset',
@@ -30,14 +29,11 @@ export const mediasetAdapter: EmbedAdapter = {
         return { type: 'error', message: `Cannot extract callSign from channel: ${channelPart}` }
       }
 
-      const callSign = callSignMatch[1]
-      const embedUrl = `https://static3.mediasetplay.mediaset.it/player/index.html?autoplay=true&callSign=${callSign}`
+      const code = callSignMatch[1].toLowerCase()
 
       return {
-        type: 'iframe',
-        src: embedUrl,
-        allow: 'autoplay; encrypted-media; fullscreen',
-        referrerPolicy: 'no-referrer',
+        type: 'hls',
+        streamUrl: `/api/mediaset-live/live/ch-${code}/${code}-clr.isml/index.m3u8`,
       }
     } catch {
       return { type: 'error', message: 'Invalid URL format for Mediaset adapter' }

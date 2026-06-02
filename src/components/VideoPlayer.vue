@@ -10,17 +10,22 @@ const props = defineProps<{
 }>()
 
 const videoRef = ref<HTMLVideoElement | null>(null)
+const hlsError = ref<string | null>(null)
 let hls: Hls | null = null
+let retryCount = 0
+const MAX_RETRIES = 3
 
 function destroyHls() {
   if (hls) {
     hls.destroy()
     hls = null
   }
+  retryCount = 0
 }
 
 function initHls(streamUrl: string) {
   destroyHls()
+  hlsError.value = null
   const video = videoRef.value
   if (!video) return
 
@@ -29,22 +34,32 @@ function initHls(streamUrl: string) {
     hls.loadSource(streamUrl)
     hls.attachMedia(video)
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
+      hlsError.value = null
       video.play().catch(() => {})
     })
     hls.on(Hls.Events.ERROR, (_event, data) => {
       if (data.fatal) {
         if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
-          hls?.startLoad()
+          retryCount++
+          if (retryCount <= MAX_RETRIES) {
+            setTimeout(() => hls?.startLoad(), 2000)
+          } else {
+            hlsError.value = 'Stream unavailable. Make sure you are connected to an Italian VPN — these streams are geo-restricted to Italy.'
+          }
         } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
           hls?.recoverMediaError()
+        } else {
+          hlsError.value = 'Failed to load stream. The channel may be temporarily unavailable.'
         }
       }
     })
   } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-    // Safari native HLS support
     video.src = streamUrl
     video.addEventListener('loadedmetadata', () => {
       video.play().catch(() => {})
+    })
+    video.addEventListener('error', () => {
+      hlsError.value = 'Stream unavailable. Make sure you are connected to an Italian VPN.'
     })
   }
 }
@@ -53,10 +68,11 @@ watch(
   () => props.config,
   (newConfig) => {
     if (newConfig?.type === 'hls') {
-      // Wait for next tick so videoRef is rendered
+      hlsError.value = null
       setTimeout(() => initHls(newConfig.streamUrl), 0)
     } else {
       destroyHls()
+      hlsError.value = null
     }
   },
   { immediate: true }
@@ -102,15 +118,34 @@ onBeforeUnmount(() => {
       />
 
       <!-- HLS stream -->
-      <video
+      <div
         v-else-if="config.type === 'hls'"
-        ref="videoRef"
-        data-testid="video-hls"
-        class="w-full h-full bg-black"
-        controls
-        autoplay
-        playsinline
-      />
+        class="absolute inset-0"
+      >
+        <video
+          ref="videoRef"
+          data-testid="video-hls"
+          class="w-full h-full bg-black"
+          controls
+          autoplay
+          playsinline
+        />
+        <!-- HLS error overlay -->
+        <div
+          v-if="hlsError"
+          data-testid="hls-error"
+          class="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-center p-6 gap-4"
+        >
+          <p class="text-4xl">📡</p>
+          <p class="text-red-400 text-lg font-medium">{{ hlsError }}</p>
+          <button
+            class="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors"
+            @click="config.type === 'hls' && initHls(config.streamUrl)"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
 
       <!-- External link (cannot be embedded) -->
       <div

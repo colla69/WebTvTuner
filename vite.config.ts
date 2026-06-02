@@ -14,6 +14,14 @@ export default defineConfig({
           'Referer': 'https://www.raiplay.it/',
         },
       },
+      '/api/mediaset-live': {
+        target: 'https://live02-seg.msf.cdn.mediaset.net',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/mediaset-live/, ''),
+        headers: {
+          'Referer': 'https://mediasetinfinity.mediaset.it/',
+        },
+      },
     },
   },
   test: {
