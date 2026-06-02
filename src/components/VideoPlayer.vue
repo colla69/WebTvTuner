@@ -51,6 +51,24 @@ defineProps<{
         HLS stream: {{ config.streamUrl }}
       </div>
 
+      <!-- External link (cannot be embedded) -->
+      <div
+        v-else-if="config.type === 'external'"
+        data-testid="player-external"
+        class="absolute inset-0 flex flex-col items-center justify-center gap-4 p-6 text-center"
+      >
+        <p class="text-gray-400 text-lg">{{ config.message }}</p>
+        <a
+          :href="config.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="external-link"
+          class="inline-block px-6 py-3 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors"
+        >
+          Open {{ channelName }} in new tab ↗
+        </a>
+      </div>
+
       <!-- Error state -->
       <div
         v-else-if="config.type === 'error'"

@@ -33,10 +33,20 @@ describe('Channel Selection', () => {
       .should('have.attr', 'src')
       .and('contain', 'rai1')
 
-    cy.selectChannel('canale-5')
+    cy.selectChannel('rai-2')
     cy.get('[data-testid="video-iframe"]')
       .should('have.attr', 'src')
-      .and('contain', 'canale5')
+      .and('contain', 'rai2')
+    cy.get('[data-testid="channel-name"]').should('contain', 'Rai 2')
+  })
+
+  it('shows external link for Mediaset channels (cannot embed)', () => {
+    cy.get('[data-testid="channel-canale-5"]').scrollIntoView()
+    cy.selectChannel('canale-5')
+    cy.get('[data-testid="player-external"]').should('be.visible')
+    cy.get('[data-testid="external-link"]')
+      .should('have.attr', 'href')
+      .and('contain', 'mediasetinfinity')
     cy.get('[data-testid="channel-name"]').should('contain', 'Canale 5')
   })
 

@@ -12,6 +12,12 @@ export interface HlsEmbedConfig {
   headers?: Record<string, string>
 }
 
+export interface ExternalEmbedConfig {
+  type: 'external'
+  url: string
+  message: string
+}
+
 export interface CustomEmbedConfig {
   type: 'custom'
   component: string
@@ -23,7 +29,7 @@ export interface ErrorEmbedConfig {
   message: string
 }
 
-export type EmbedConfig = IframeEmbedConfig | HlsEmbedConfig | CustomEmbedConfig | ErrorEmbedConfig
+export type EmbedConfig = IframeEmbedConfig | HlsEmbedConfig | ExternalEmbedConfig | CustomEmbedConfig | ErrorEmbedConfig
 
 export interface EmbedAdapter {
   id: string

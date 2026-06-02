@@ -2,7 +2,8 @@ import type { EmbedAdapter, EmbedConfig } from './adapter.types'
 
 /**
  * Adapter for mediasetinfinity.mediaset.it live streams.
- * Mediaset provides live stream pages via /diretta/ URLs.
+ * Mediaset blocks iframe embedding via CSP: frame-ancestors 'self' *.mediaset.it *.mediaset.net
+ * Falls back to opening the stream in a new tab.
  * Last verified: 2026-06-02
  */
 export const mediasetAdapter: EmbedAdapter = {
@@ -14,7 +15,6 @@ export const mediasetAdapter: EmbedAdapter = {
     try {
       const url = new URL(channelUrl)
       const pathSegments = url.pathname.split('/').filter(Boolean)
-      // URL pattern: /diretta/{channelSlug_code}
       const direttaIndex = pathSegments.indexOf('diretta')
       const channelPart = direttaIndex >= 0 ? pathSegments[direttaIndex + 1] : undefined
 
@@ -22,11 +22,11 @@ export const mediasetAdapter: EmbedAdapter = {
         return { type: 'error', message: 'Invalid Mediaset channel URL: missing channel identifier' }
       }
 
+      // Mediaset blocks iframe embedding (CSP frame-ancestors restriction)
       return {
-        type: 'iframe',
-        src: `https://mediasetinfinity.mediaset.it/diretta/${channelPart}`,
-        allow: 'autoplay; encrypted-media; fullscreen',
-        referrerPolicy: 'no-referrer-when-downgrade',
+        type: 'external',
+        url: `https://mediasetinfinity.mediaset.it/diretta/${channelPart}`,
+        message: 'Mediaset does not allow embedding. Click below to open in a new tab.',
       }
     } catch {
       return { type: 'error', message: 'Invalid URL format for Mediaset adapter' }
