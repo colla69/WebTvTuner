@@ -8,11 +8,11 @@ describe('raiplayAdapter', () => {
     expect(raiplayAdapter.domain).toBe('raiplay.it')
   })
 
-  it('generates iframe config for a valid channel URL', () => {
+  it('generates iframe config using dedicated embed URL', () => {
     const config = raiplayAdapter.getEmbedConfig('https://www.raiplay.it/dirette/rai1')
     expect(config.type).toBe('iframe')
     if (config.type === 'iframe') {
-      expect(config.src).toBe('https://www.raiplay.it/dirette/rai1')
+      expect(config.src).toBe('https://www.raiplay.it/iframe/dirette/rai1')
       expect(config.allow).toContain('autoplay')
     }
   })
@@ -23,7 +23,7 @@ describe('raiplayAdapter', () => {
       const config = raiplayAdapter.getEmbedConfig(`https://www.raiplay.it/dirette/${slug}`)
       expect(config.type).toBe('iframe')
       if (config.type === 'iframe') {
-        expect(config.src).toBe(`https://www.raiplay.it/dirette/${slug}`)
+        expect(config.src).toBe(`https://www.raiplay.it/iframe/dirette/${slug}`)
       }
     }
   })
@@ -32,7 +32,7 @@ describe('raiplayAdapter', () => {
     const config = raiplayAdapter.getEmbedConfig('https://www.raiplay.it/dirette/rai1/')
     expect(config.type).toBe('iframe')
     if (config.type === 'iframe') {
-      expect(config.src).toBe('https://www.raiplay.it/dirette/rai1')
+      expect(config.src).toBe('https://www.raiplay.it/iframe/dirette/rai1')
     }
   })
 

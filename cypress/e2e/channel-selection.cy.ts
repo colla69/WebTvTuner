@@ -31,12 +31,12 @@ describe('Channel Selection', () => {
     cy.selectChannel('rai-1')
     cy.get('[data-testid="video-iframe"]')
       .should('have.attr', 'src')
-      .and('contain', 'rai1')
+      .and('contain', 'iframe/dirette/rai1')
 
     cy.selectChannel('rai-2')
     cy.get('[data-testid="video-iframe"]')
       .should('have.attr', 'src')
-      .and('contain', 'rai2')
+      .and('contain', 'iframe/dirette/rai2')
     cy.get('[data-testid="channel-name"]').should('contain', 'Rai 2')
   })
 

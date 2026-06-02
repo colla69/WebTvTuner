@@ -2,8 +2,8 @@ import type { EmbedAdapter, EmbedConfig } from './adapter.types'
 
 /**
  * Adapter for raiplay.it live streams.
- * RAI provides an iframe-embeddable player via their /dirette/ URLs.
- * Last verified: 2026-06-02
+ * RAI provides a dedicated iframe-optimised player at /iframe/dirette/{channelSlug}
+ * which renders a full-viewport video player with no site navigation.
  */
 export const raiplayAdapter: EmbedAdapter = {
   id: 'raiplay',
@@ -24,7 +24,7 @@ export const raiplayAdapter: EmbedAdapter = {
 
       return {
         type: 'iframe',
-        src: `https://www.raiplay.it/dirette/${channelSlug}`,
+        src: `https://www.raiplay.it/iframe/dirette/${channelSlug}`,
         allow: 'autoplay; encrypted-media; fullscreen',
         referrerPolicy: 'no-referrer-when-downgrade',
       }
