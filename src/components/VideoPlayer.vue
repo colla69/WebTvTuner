@@ -26,7 +26,7 @@ function destroyHls() {
 
 /**
  * Resolves the actual stream URL. For RAI, the proxy returns a plain-text
- * CDN URL that we then pass to hls.js. For Mediaset, the URL is direct.
+ * CDN URL that we then pass to hls.js. For Mediaset/others, returns as-is.
  */
 async function resolveStreamUrl(url: string): Promise<string> {
   if (url.includes('/api/rai-relinker/')) {
@@ -40,8 +40,20 @@ async function resolveStreamUrl(url: string): Promise<string> {
     }
     return text
   }
-  // Mediaset: direct proxy URL
   return url
+}
+
+/**
+ * Determines proper Referer for the proxy based on the target URL domain.
+ */
+function getRefererForUrl(url: string): string {
+  if (url.includes('rai.it') || url.includes('raiplay') || (url.includes('akamaized.net') && url.includes('rai'))) {
+    return 'https://www.raiplay.it/'
+  }
+  if (url.includes('mediaset')) {
+    return 'https://mediasetinfinity.mediaset.it/'
+  }
+  return ''
 }
 
 function initHls(streamUrl: string) {
@@ -51,7 +63,18 @@ function initHls(streamUrl: string) {
   if (!video) return
 
   if (Hls.isSupported()) {
-    hls = new Hls({ enableWorker: true, lowLatencyMode: true })
+    hls = new Hls({
+      enableWorker: true,
+      lowLatencyMode: true,
+      xhrSetup: (xhr, url) => {
+        // Route ALL requests through our stream proxy to avoid CORS/403 issues
+        if (!url.startsWith('/api/')) {
+          const referer = getRefererForUrl(url)
+          const proxyUrl = `/api/stream-proxy?url=${encodeURIComponent(url)}&referer=${encodeURIComponent(referer)}`
+          xhr.open('GET', proxyUrl, true)
+        }
+      },
+    })
     hls.loadSource(streamUrl)
     hls.attachMedia(video)
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
